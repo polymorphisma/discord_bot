@@ -6,6 +6,10 @@ poetry shell
 poetry install
 ```
 
+### Set Variable in .env
+1. Create `.env` file
+2. Copy All variable from `.env.example` and paste it in `.env`
+3. Enter valid values in `.env`
 
 ### Run script
 ```python
