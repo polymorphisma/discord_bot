@@ -12,12 +12,20 @@ load_dotenv()
 
 # Replace the following with your bot's token and the target channel ID
 BOT_TOKEN = os.getenv("DISCORD_TOKEN")  # Replace with your bot token
-CHANNEL_ID = os.getenv("CHANNEL_ID")  # Replace with the target channel ID
+CHANNEL_ID = int(os.getenv("CHANNEL_ID"))  # Replace with the target channel ID
+
+
+if not isinstance(CHANNEL_ID, int):
+    try:
+        CHANNEL_ID = int(CHANNEL_ID)
+    except Exception as exp:
+        raise ValueError(f"Channel id is incorrect. {exp}")
 
 
 who_is_out = get_who_is_out()
 MESSAGE = format_to_table(who_is_out)
-print(len(MESSAGE))
+
+
 
 # Create an instance of the bot
 intents = discord.Intents.default()
@@ -35,7 +43,7 @@ async def on_ready():
             return
 
         # Send the message
-        await channel.send(MESSAGE)
+        await channel.send(MESSAGE, silent=True)
         print("Message sent successfully!")
 
         # Close the bot after sending the message

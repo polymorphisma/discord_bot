@@ -2,6 +2,7 @@ import requests
 from playwright.sync_api import sync_playwright
 from dotenv import load_dotenv
 import os
+import time
 
 load_dotenv()
 
@@ -25,6 +26,7 @@ def get_cookies_with_playwright():
 
         # Wait for the page to load and for cookies to be set
         page.wait_for_load_state("networkidle")
+        time.sleep(15)
 
         # Capture cookies from the browser context
         cookies = context.cookies()
@@ -57,17 +59,16 @@ def make_api_request(cookies, development=False):
         'tenantid': '92e47fd0-f814-40d7-b880-64430c6be99b',
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0'
     }
-
     # Send the GET request with cookies
     response = requests.get(url, headers=headers, cookies=cookies)
-
+    print(response.status_code)
+    print(response.text)
     # Check the response status
     if response.status_code == 200:
         response = response.json()
         if development:
             print(response)
         return response
-
     raise ValueError("Status Code Not matched.")
 
 
@@ -89,6 +90,42 @@ def _parser(data):
     return using_value
 
 
+def get_local_storage_with_playwright():
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False)  # Use headless=False for debugging
+        context = browser.new_context()
+        page = context.new_page()
+
+        # Navigate to the login page
+        page.goto("https://login.app.rigohr.com/login")
+
+        # Fill in the login form
+        page.fill("input[name='Username']", os.getenv("EMAIL"))
+        page.fill("input[name='Password']", os.getenv("EMAIL_PASSWORD"))
+
+        # Submit the login form
+        page.click("button[type='submit']")
+
+        # Wait for the page to load completely
+        page.wait_for_load_state("networkidle")
+
+        time.sleep(15)
+
+        # Extract localStorage data
+        local_storage = page.evaluate("() => JSON.stringify(localStorage)")
+
+        # Extract sessionStorage data
+        session_storage = page.evaluate("() => JSON.stringify(sessionStorage)")
+
+        local_storage_dict = eval(local_storage)
+        session_storage_dict = eval(session_storage)
+
+        # Close the browser
+        browser.close()
+
+        return local_storage_dict, session_storage_dict
+
+
 def get_who_is_out():
     cookies = get_cookies_with_playwright()
     value = make_api_request(cookies=cookies)
@@ -96,5 +133,7 @@ def get_who_is_out():
 
 
 if __name__ == "__main__":
-    value = get_who_is_out()
+    # value = get_who_is_out()
+    value, session_value = get_local_storage_with_playwright()
     print(value)
+    print(session_value)
